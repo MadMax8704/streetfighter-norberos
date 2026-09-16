@@ -51,6 +51,13 @@ h1.logo span{color:#ff5c39}
 .stat{font-size:clamp(16px,2.6vw,22px);color:#eaf0fa;margin:5px 0}
 .stat b{color:#ffd23f;font-size:1.3em}
 .fullbtn{margin-top:14px;font-size:13px;letter-spacing:1px;padding:8px 18px;border-radius:10px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#cfd8ea;cursor:pointer}
+/* combo lista (a főmenüben, eszközhöz igazodva) */
+.combolist{margin-top:14px;max-width:470px;width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:10px 16px;font-size:12.5px;line-height:1.9;color:#dfe7f5;text-align:left}
+.combolist .clhead{color:#ffd23f;font-weight:900;letter-spacing:2px;font-size:11px;margin-bottom:2px}
+.combolist b{color:#ffd23f;font-weight:800}
+.combolist .touch{display:none}
+body.touch .combolist .pc{display:none}
+body.touch .combolist .touch{display:block}
 body.touch .ctrls .pc{display:none}
 /* kis (telefonos) nézet: kompakt menü, hogy a FIGHT gomb mindig látszik */
 @media (max-height:560px){
@@ -60,6 +67,7 @@ body.touch .ctrls .pc{display:none}
   #menu .tip{display:none}
   .bigbtn{font-size:16px;padding:10px 32px;letter-spacing:1px}
   .fullbtn{margin-top:10px;font-size:12px;padding:7px 14px}
+  .combolist{font-size:11.5px;line-height:1.7;padding:8px 12px;margin-top:10px}
 }
 /* ranglista / high score tábla */
 .boardwrap{width:100%;max-width:540px;margin:12px 0}
@@ -116,7 +124,11 @@ body.portrait #rotate{display:flex}
   </div>
   <button id="btnStart" class="bigbtn">FIGHT!</button>
   <div class="sub tip" style="margin-top:14px;font-size:12px;color:#8fa0bd">Tip: 6 combo moves – dash smash, finisher, sweep, dive bomb, rush &amp; spin kick · new enemy types from wave 2, BOSS every 5th wave!</div>
-  <button id="btnFull" class="fullbtn">⛶ FULLSCREEN</button>
+  <div id="comboList" class="combolist">
+    <div class="clhead">COMBOS</div>
+    <div class="cl pc"><b>←/→ ×2 + J</b> Dash Smash · <b>J J + K</b> Finisher<br><b>S + K</b> Sweep · <b>S + J (in air)</b> Dive Bomb<br><b>J J J</b> Rush · <b>K K</b> Spin Kick</div>
+    <div class="cl touch"><b>2×←/→ + PUNCH</b> Dash Smash · <b>PUNCH PUNCH KICK</b> Finisher<br><b>↓ + KICK</b> Sweep · <b>↓ + PUNCH (in air)</b> Dive Bomb<br><b>PUNCH ×3</b> Rush · <b>KICK ×2</b> Spin Kick</div>
+  </div>
   <button id="btnBoard" class="fullbtn">🏆 LEADERBOARD</button>
   <button id="btnInstall" class="fullbtn">📲 INSTALL APP</button>
 </div>
@@ -333,22 +345,7 @@ document.getElementById('btnPause').addEventListener('pointerdown',e=>{e.prevent
 document.getElementById('ovlPauseBtn').addEventListener('click',()=>togglePause());
 function toggleMute(){ muted=!muted; if(master)master.gain.value=muted?0:.45; document.getElementById('btnMute').textContent=muted?'🔇':'🔊'; }
 document.getElementById('btnMute').addEventListener('pointerdown',e=>{e.preventDefault();ac();toggleMute();});
-/* fullscreen – rejtse el a böngésző keretét, ha a böngésző/WebView támogatja */
-const btnFull=document.getElementById('btnFull');
-(function(){
-  const el=document.documentElement;
-  if(!(el.requestFullscreen||el.webkitRequestFullscreen||el.webkitRequestFullScreen)){ btnFull.style.display='none'; return; }
-  btnFull.addEventListener('pointerdown',e=>{
-    e.preventDefault();
-    try{
-      if(document.fullscreenElement||document.webkitFullscreenElement){
-        const x=document.exitFullscreen||document.webkitExitFullscreen||document.webkitExitFullScreen; if(x)x.call(document);
-      } else {
-        const r=el.requestFullscreen||el.webkitRequestFullscreen||el.webkitRequestFullScreen; r.call(el);
-      }
-    }catch(err){}
-  });
-})();
+/* fullscreen-változásra (pl. böngésző parancsából) a layoutot is rendezzük */
 document.addEventListener('fullscreenchange',settleLayout);
 document.addEventListener('webkitfullscreenchange',settleLayout);
 /* ================= SEGÉDEK ================= */
