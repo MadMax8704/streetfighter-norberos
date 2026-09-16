@@ -1,0 +1,9 @@
+# A jatek a public/ mappabol megy ki, a Function a netlify/functions-bol.
+# Igy a functions forras es a node_modules nem kerul fel a publikus oldalra.
+
+[build]
+  publish = "public"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"

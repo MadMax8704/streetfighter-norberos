@@ -53,6 +53,27 @@ body.touch .ctrls .pc{display:none}
   .bigbtn{font-size:16px;padding:10px 32px;letter-spacing:1px}
   .fullbtn{margin-top:10px;font-size:12px;padding:7px 14px}
 }
+/* ranglista / high score tábla */
+.boardwrap{width:100%;max-width:540px;margin:12px 0}
+.boardwrap table{width:100%;border-collapse:collapse;font-size:13px;color:#e8eefc}
+.boardwrap th{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#8fa0bd;text-align:left;padding:6px 8px;border-bottom:2px solid rgba(255,255,255,.18)}
+.boardwrap td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.08)}
+.boardwrap .r{text-align:right}
+.boardwrap .n{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.boardwrap tr.me td{background:rgba(255,210,63,.16);color:#ffd23f;font-weight:800}
+#ovlBoard{background:rgba(6,9,20,.94)}
+.boardempty{color:#8fa0bd;font-size:13px;padding:14px 0}
+.boardsrc{margin-top:8px;font-size:11px;letter-spacing:.5px;color:#6fdc8c;opacity:.9}
+.boardsrc.local{color:#ffb45c}
+#nameRow{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;justify-content:center;align-items:stretch}
+#inpName{font:800 16px 'Trebuchet MS',Arial;letter-spacing:2px;text-transform:uppercase;padding:12px 14px;width:min(230px,58vw);border-radius:10px;border:2px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;text-align:center;outline:none;user-select:text;-webkit-user-select:text}
+#inpName::placeholder{color:#7d8ba6;letter-spacing:1px;text-transform:none}
+#inpName:focus{border-color:#ffd23f;box-shadow:0 0 0 3px rgba(255,210,63,.18)}
+#inpName:disabled{opacity:.6}
+#btnSave{font:900 15px 'Trebuchet MS',Arial;letter-spacing:2px;padding:12px 26px;border-radius:10px;border:none;background:linear-gradient(#ffd23f,#e0a800);color:#3a2500;cursor:pointer;box-shadow:0 5px 0 #8a6600}
+#btnSave:active{transform:translateY(3px);box-shadow:0 2px 0 #8a6600}
+#btnSave[disabled]{filter:grayscale(.7) brightness(.7);box-shadow:none;cursor:default;transform:none}
+.savedmsg{min-height:18px;margin-top:8px;font-size:13px;color:#7dff8a}
 /* forgatás */
 #rotate{position:fixed;inset:0;z-index:99;background:#05070f;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px))}
 body.portrait #rotate{display:flex}
@@ -81,13 +102,27 @@ body.portrait #rotate{display:flex}
   <button id="btnStart" class="bigbtn">FIGHT!</button>
   <div class="sub tip" style="margin-top:14px;font-size:12px;color:#8fa0bd">Tip: 6 combo moves – dash smash, finisher, sweep, dive bomb, rush &amp; spin kick · new enemy types from wave 2, BOSS every 5th wave!</div>
   <button id="btnFull" class="fullbtn">⛶ FULLSCREEN</button>
+  <button id="btnBoard" class="fullbtn">🏆 LEADERBOARD</button>
 </div>
 <div id="over" class="ovl hidden">
   <h1 class="logo" style="color:#ff5c39;text-shadow:0 0 24px rgba(255,80,40,.6),0 4px 0 #500">KNOCKED OUT!</h1>
   <div class="stat">Score: <b id="ovScore">0</b></div>
   <div class="stat">Wave reached: <b id="ovWave">1</b></div>
+  <div class="stat">Survived: <b id="ovTime">0:00</b></div>
   <div class="stat">Best: <b id="ovBest">0</b></div>
+  <div id="nameRow">
+    <input id="inpName" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="YOUR NAME">
+    <button id="btnSave">SAVE</button>
+  </div>
+  <div class="savedmsg" id="savedMsg"></div>
+  <div class="boardwrap" id="ovBoard"></div>
   <button id="btnAgain" class="bigbtn" style="margin-top:18px">RETRY</button>
+</div>
+<div id="ovlBoard" class="ovl hidden">
+  <h1 class="logo" style="font-size:clamp(26px,5vw,48px)">🏆 LEADERBOARD</h1>
+  <div class="sub" style="margin-bottom:4px">Top runs – score, time and wave</div>
+  <div class="boardwrap" id="menuBoard"></div>
+  <button id="btnBoardBack" class="bigbtn">BACK</button>
 </div>
 <div id="ovlPause" class="ovl hidden">
   <h1 class="logo">PAUSED</h1>
@@ -208,7 +243,13 @@ function checkCombo(){
 }
 const MAX_PARTICLES=500; function pushP(p){ if(particles.length<MAX_PARTICLES)particles[particles.length]=p; }
 const keymap={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowDown:'down',KeyS:'down',ArrowUp:'jump',KeyW:'jump',Space:'jump',KeyJ:'punch',KeyZ:'punch',KeyK:'kick',KeyX:'kick',KeyL:'special',KeyC:'special'};
+/* igaz, ha éppen szövegbeviteli mezőben gépelünk (akkor a játék ne reagáljon a billentyűkre) */
+function isTyping(e){
+  const t=(e&&e.target)||document.activeElement;
+  return !!(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable));
+}
 window.addEventListener('keydown',e=>{
+  if(isTyping(e))return; // gépelés közben ne induljon játék
   const a=keymap[e.code];
   if(a&&!e.repeat){ input[a]=true; pressEdge(a); }
   if(e.code==='KeyM')toggleMute();
@@ -303,7 +344,7 @@ const FLAVOR=['Opening kick!','The enemies are gathering!','Enemies are getting 
 let game, player, enemies=[], particles=[], texts=[], projs=[], drops=[];
 let gameBanner=null, gameOverT=0;
 function newGame(){
-  game={phase:'menu',wave:1,score:0,combo:0,comboTimer:0,comboT:0,t:0,hitstop:0,spawnQueue:0,spawnTimer:0,spawnSide:-1,introT:0,clearT:0,bossT:0,rageT:0,slowT:0,koSlow:0,overShown:false};
+  game={phase:'menu',wave:1,score:0,combo:0,comboTimer:0,comboT:0,t:0,runT:0,savedTs:0,hitstop:0,spawnQueue:0,spawnTimer:0,spawnSide:-1,introT:0,clearT:0,bossT:0,rageT:0,slowT:0,koSlow:0,overShown:false};
   player=new Fighter(true); player.x=640; player.y=floorY-30;
   enemies=[]; particles=[]; texts=[]; projs=[]; drops=[]; gameOverT=0; gameBanner=null;
 }
@@ -332,6 +373,106 @@ function spawnBoss(){
 function setBanner(m,s){ gameBanner={m,s,t:1.8}; }
 function loadBest(){ try{return +(localStorage.getItem('rm_best')||0);}catch(e){return 0;} }
 function saveBest(v){ try{localStorage.setItem('rm_best',v);}catch(e){} }
+/* ================= RANGLISTA (high score tábla) =================
+   A perzisztencia a `Board` objektumban van. A közös ranglista a Netlify Function
+   végpontján (`/api/scores`, lásd netlify/functions/scores.mjs) keresztül megy.
+
+   Ha a végpont nem elérhető (megnyitottad a fájlt file://-ból, vagy a site
+   Function nélkül lett feltöltve), akkor automatikusan localStorage-ra esik
+   vissza, és a tábla alatt jelzi, hogy csak helyi eredmények látszanak.
+
+   A pontszám bejegyzés alakja: {name, score, wave, time, ts}
+   (time = túlélési idő másodpercben, ts = a mentés időpontja)                     */
+const SCORES_KEY='rm_scores_v1', NAME_KEY='rm_name', MAX_KEEP=60, BOARD_ROWS=10, API_URL='/api/scores';
+let boardSource='local'; // 'global' = a szerver válaszolt, 'local' = csak helyi eredmények
+function mergeLocal(e){ writeLocalScores(sortScores(readLocalScores().concat([e])).slice(0,MAX_KEEP)); }
+async function apiScores(method,entry){
+  const opt=method==='POST'
+    ? {method:'POST',headers:{'Content-Type':'application/json'},
+       /* a ts-t szándékosan nem küldjük: azt a szerver állítja be */
+       body:JSON.stringify({name:entry.name,score:entry.score,wave:entry.wave,time:entry.time})}
+    : {cache:'no-store'};
+  const r=await fetch(API_URL,opt);
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  if(!j||!Array.isArray(j.scores))throw new Error('bad payload');
+  boardSource='global';
+  return j;
+}
+const Board={
+  async list(){
+    try{ return sortScores((await apiScores('GET')).scores).slice(0,BOARD_ROWS); }
+    catch(err){ boardSource='local'; return sortScores(readLocalScores()).slice(0,BOARD_ROWS); }
+  },
+  async submit(e){
+    try{
+      const j=await apiScores('POST',e);
+      mergeLocal(j.entry||e);                                   // helyi tükör, hogy offline is látszódjon
+      return {ok:true,rows:sortScores(j.scores).slice(0,BOARD_ROWS),ts:(j.entry||e).ts};
+    }catch(err){
+      mergeLocal(e); boardSource='local';                       // a szerver nem elérhető: ne vesszen el az eredmény
+      return {ok:false,rows:sortScores(readLocalScores()).slice(0,BOARD_ROWS),ts:e.ts};
+    }
+  }
+};
+function readLocalScores(){ try{ const a=JSON.parse(localStorage.getItem(SCORES_KEY)||'[]'); return Array.isArray(a)?a.filter(e=>e&&typeof e.score==='number'):[]; }catch(e){ return []; } }
+function writeLocalScores(a){ try{ localStorage.setItem(SCORES_KEY,JSON.stringify(a)); }catch(e){} }
+function sortScores(a){ return a.slice().sort((x,y)=>(y.score||0)-(x.score||0)||(x.time||0)-(y.time||0)); }
+function loadName(){ try{ return localStorage.getItem(NAME_KEY)||''; }catch(e){ return ''; } }
+function saveName(n){ try{ localStorage.setItem(NAME_KEY,n); }catch(e){} }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function sanitizeName(n){ return String(n||'').replace(/[<>&"'`\\]/g,'').replace(/\s+/g,' ').trim().slice(0,12).toUpperCase(); }
+function fmtTime(s){ s=Math.max(0,Math.floor(s||0)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function boardHTML(rows,hlTs){
+  rows=sortScores(rows||[]).slice(0,BOARD_ROWS); // akkor is helyes sorrend, ha a backend rendezetlenül adja vissza
+  if(!rows.length)return '<div class="boardempty">No scores yet – be the first one on the board!</div>';
+  let h='<table><thead><tr><th>#</th><th>Name</th><th class="r">Score</th><th class="r">Time</th><th class="r">Wave</th></tr></thead><tbody>';
+  for(let i=0;i<rows.length;i++){
+    const e=rows[i];
+    h+='<tr'+(hlTs&&e.ts===hlTs?' class="me"':'')+'><td>'+(i+1)+'</td><td class="n">'+esc(e.name||'???')+'</td>'+
+       '<td class="r">'+(e.score||0).toLocaleString('en-US')+'</td><td class="r">'+fmtTime(e.time)+'</td><td class="r">'+(e.wave||1)+'</td></tr>';
+  }
+  return h+'</tbody></table>';
+}
+async function renderBoards(hlTs){
+  let rows=[];
+  try{ rows=await Board.list(); }catch(err){ rows=[]; }
+  const a=document.getElementById('ovBoard'), b=document.getElementById('menuBoard');
+  const html=boardHTML(rows,hlTs)+(boardSource==='global'
+    ? '<div class="boardsrc">🌍 Global leaderboard – everyone\'s scores</div>'
+    : '<div class="boardsrc local">💾 Local only – the server is not reachable</div>');
+  if(a)a.innerHTML=html;
+  if(b)b.innerHTML=html;
+}
+let savingScore=false;
+async function submitScore(){
+  if(savingScore||game.savedTs)return;
+  savingScore=true;
+  const inp=document.getElementById('inpName'), msg=document.getElementById('savedMsg');
+  const name=sanitizeName(inp.value)||'PLAYER';
+  saveName(name); inp.value=name;
+  document.getElementById('btnSave').disabled=true; inp.disabled=true;
+  const entry={name,score:game.score,wave:game.wave,time:Math.round(game.runT),ts:Date.now()};
+  game.savedTs=entry.ts;
+  let res;
+  try{
+    res=await Board.submit(entry);
+  }catch(err){
+    /* a Board.submit elvileg nem dob, de ha mégis, akkor se vesszen el az eredmény
+       és ne maradjon visszajelzés nélkül a játékos */
+    try{ mergeLocal(entry); }catch(e2){}
+    boardSource='local';
+    res={ok:false,rows:sortScores(readLocalScores()).slice(0,BOARD_ROWS),ts:entry.ts};
+  }finally{
+    savingScore=false;
+  }
+  msg.textContent=res.ok?'Saved to the global leaderboard!':'Server not reachable – kept on this device.';
+  await renderBoards(res.ts); // a szerver adja a végleges ts-t, az alapján emeljük ki a saját sort
+}
+document.getElementById('btnSave').addEventListener('click',e=>{ e.preventDefault(); submitScore(); });
+document.getElementById('inpName').addEventListener('keydown',e=>{ if(e.code==='Enter'){ e.preventDefault(); e.stopPropagation(); submitScore(); } });
+document.getElementById('btnBoard').addEventListener('click',()=>{ renderBoards(0); document.getElementById('ovlBoard').classList.remove('hidden'); });
+document.getElementById('btnBoardBack').addEventListener('click',()=>{ document.getElementById('ovlBoard').classList.add('hidden'); });
 /* ================= HARCOLO (FIGHTER) ================= */
 let fid=0;
 const ENEMY_COLORS=[['#d94f3d','#e8e6df'],['#3f76d9','#dde4ee'],['#3fa05a','#dbeadc'],['#c98a2e','#efe6d8'],['#8a53c9','#e6dcf0'],['#d14f9a','#f2e0ea']];
@@ -694,8 +835,17 @@ function showGameOver(){
   const best=Math.max(game.score,loadBest()); saveBest(best);
   document.getElementById('ovScore').textContent=game.score.toLocaleString('en-US');
   document.getElementById('ovWave').textContent=game.wave;
+  document.getElementById('ovTime').textContent=fmtTime(game.runT);
   document.getElementById('ovBest').textContent=best.toLocaleString('en-US');
+  /* névbekérés visszaállítása minden körnél */
+  const inp=document.getElementById('inpName');
+  inp.disabled=false; inp.value=loadName();
+  document.getElementById('btnSave').disabled=false;
+  document.getElementById('savedMsg').textContent='';
+  document.getElementById('nameRow').classList.remove('hidden');
   document.getElementById('over').classList.remove('hidden');
+  renderBoards(0);
+  if(!isTouch)setTimeout(()=>{ try{ inp.focus(); inp.select(); }catch(e){} },80); // mobilon ne ugorjon fel a billentyűzet
 }
 /* ================= ELLENFELES AI ================= */
 function spawnEnemy(){
@@ -807,6 +957,7 @@ function updateFx(dt){
 /* ================= FŐ PÉP ================= */
 function update(dt){
   game.t+=dt;
+  if(game.phase==='waveIntro'||game.phase==='playing'||game.phase==='waveClear')game.runT+=dt; // túlélési idő (K.O.-ig)
   if(gameBanner){ gameBanner.t-=dt; if(gameBanner.t<=0)gameBanner=null; }
   if(game.hitstop>0){ game.hitstop-=dt; return; }
   shakeMag=Math.max(0,shakeMag-dt*26);
@@ -1152,6 +1303,8 @@ function drawHUD(){
   ctx.fillText(scoreStr,cssW-16,34);
   ctx.font='800 15px Trebuchet MS'; ctx.fillStyle='#ffd23f';
   ctx.fillText('WAVE '+game.wave,cssW-16,56);
+  ctx.font='800 13px Trebuchet MS'; ctx.fillStyle='#cfd8ea';
+  ctx.fillText('TIME '+fmtTime(game.runT),cssW-16,76);
   /* kombó */
   if(game.combo>=2){
     const sc=1+game.comboT*1.5;

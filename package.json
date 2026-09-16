@@ -1,0 +1,10 @@
+{
+  "name": "ragdoll-masters-leaderboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ragdoll Masters - Netlify statikus jatek + ranglista Function (Netlify Blobs)",
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "^11.1.0"
+  }
+}
