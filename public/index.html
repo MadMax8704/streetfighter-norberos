@@ -51,6 +51,7 @@ h1.logo span{color:#ff5c39}
 .stat{font-size:clamp(16px,2.6vw,22px);color:#eaf0fa;margin:5px 0}
 .stat b{color:#ffd23f;font-size:1.3em}
 .fullbtn{margin-top:14px;font-size:13px;letter-spacing:1px;padding:8px 18px;border-radius:10px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#cfd8ea;cursor:pointer}
+a.fullbtn{text-decoration:none}
 body.touch .ctrls .pc{display:none}
 /* kis (telefonos) nézet: kompakt menü, hogy a FIGHT gomb mindig látszik */
 @media (max-height:560px){
@@ -119,6 +120,7 @@ body.portrait #rotate{display:flex}
   <button id="btnFull" class="fullbtn">⛶ FULLSCREEN</button>
   <button id="btnBoard" class="fullbtn">🏆 LEADERBOARD</button>
   <button id="btnInstall" class="fullbtn">📲 INSTALL APP</button>
+  <a id="btnDownload" class="fullbtn" href="index.html" download="ragdoll-masters.html" title="Save the whole game as one HTML file – playable offline (leaderboard stays on this device)">⬇ DOWNLOAD GAME</a>
 </div>
 <div id="over" class="ovl hidden">
   <h1 class="logo" style="color:#ff5c39;text-shadow:0 0 24px rgba(255,80,40,.6),0 4px 0 #500">KNOCKED OUT!</h1>
