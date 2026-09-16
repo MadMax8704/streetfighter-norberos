@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Ragdoll Masters – Stick Arena</title>
+<!-- PWA: manifest + iOS meta -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#070a14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden;background:#070a14;user-select:none;-webkit-user-select:none;font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif}
@@ -82,6 +90,13 @@ body.portrait #rotate{display:flex}
 @keyframes rot{from{transform:rotate(0)}to{transform:rotate(90deg)}}
 #rotate h2{font-size:clamp(18px,4vw,30px);margin-bottom:8px}
 #rotate p{color:#9fb0cc;font-size:clamp(12px,2.4vw,16px)}
+/* app telepítés (PWA) */
+.inststeps{list-style:none;margin:6px 0 14px;padding:0;display:flex;flex-direction:column;gap:10px;max-width:430px;width:100%}
+.inststeps li{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.5;color:#dfe7f5;text-align:left}
+.inststeps b{color:#ffd23f}
+.inststeps .num{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:linear-gradient(#ffd23f,#e0a800);color:#3a2500;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:14px}
+.shareico{flex:0 0 auto;width:40px;height:40px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.4);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.instnote{font-size:12px;color:#8fa0bd;margin-bottom:16px;line-height:1.6}
 </style>
 </head>
 <body>
@@ -103,6 +118,7 @@ body.portrait #rotate{display:flex}
   <div class="sub tip" style="margin-top:14px;font-size:12px;color:#8fa0bd">Tip: 6 combo moves – dash smash, finisher, sweep, dive bomb, rush &amp; spin kick · new enemy types from wave 2, BOSS every 5th wave!</div>
   <button id="btnFull" class="fullbtn">⛶ FULLSCREEN</button>
   <button id="btnBoard" class="fullbtn">🏆 LEADERBOARD</button>
+  <button id="btnInstall" class="fullbtn">📲 INSTALL APP</button>
 </div>
 <div id="over" class="ovl hidden">
   <h1 class="logo" style="color:#ff5c39;text-shadow:0 0 24px rgba(255,80,40,.6),0 4px 0 #500">KNOCKED OUT!</h1>
@@ -127,6 +143,13 @@ body.portrait #rotate{display:flex}
 <div id="ovlPause" class="ovl hidden">
   <h1 class="logo">PAUSED</h1>
   <button id="ovlPauseBtn" class="bigbtn">RESUME</button>
+</div>
+<div id="ovlInstall" class="ovl hidden">
+  <h1 class="logo" style="font-size:clamp(26px,5vw,48px)">📲 INSTALL THE APP</h1>
+  <div class="sub" id="instPlat"></div>
+  <ul class="inststeps" id="instSteps"></ul>
+  <div class="instnote">After installing, open it from your home screen – it runs as a full-screen app and works offline.</div>
+  <button id="btnInstallClose" class="bigbtn">CLOSE</button>
 </div>
 <div id="rotate">
   <div id="rotPhone"></div>
@@ -473,6 +496,54 @@ document.getElementById('btnSave').addEventListener('click',e=>{ e.preventDefaul
 document.getElementById('inpName').addEventListener('keydown',e=>{ if(e.code==='Enter'){ e.preventDefault(); e.stopPropagation(); submitScore(); } });
 document.getElementById('btnBoard').addEventListener('click',()=>{ renderBoards(0); document.getElementById('ovlBoard').classList.remove('hidden'); });
 document.getElementById('btnBoardBack').addEventListener('click',()=>{ document.getElementById('ovlBoard').classList.add('hidden'); });
+/* ================= APP TELEPÍTÉS (PWA) =================
+   Chrome/Edge-ben (Android + asztali) a beforeinstallprompt eseményt felhasználva
+   natív telepítő ablakot nyitunk. Ha az nem érhető el (pl. iPhone/Safari),
+   akkor magyar nyelvű, eszközhöz igazított útmutatót mutatunk.            */
+(function(){
+  const btn=document.getElementById('btnInstall');
+  const ovl=document.getElementById('ovlInstall');
+  const stepsEl=document.getElementById('instSteps');
+  const platEl=document.getElementById('instPlat');
+  let deferred=null; // a beforeinstallprompt esemény (Chrome/Edge)
+  const standalone=window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches;
+  if(standalone){ btn.classList.add('hidden'); return; } // már telepített appként fut
+  window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferred=e; });
+  window.addEventListener('appinstalled',()=>{ btn.classList.add('hidden'); });
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  function showHelp(){
+    let html='';
+    if(isIOS){
+      platEl.textContent='iPhone / iPad – how to install (from Safari):';
+      html='<li><span class="num">1</span><span>Open the game in <b>Safari</b> (it cannot be installed from Chrome!)</span></li>'
+        +'<li><span class="num">2</span><span class="shareico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 13V3" stroke="#ffd23f" stroke-width="2" stroke-linecap="round"/><path d="M8 7l4-4 4 4" stroke="#ffd23f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9" stroke="#fff" stroke-width="2"/></svg></span><span>Tap the <b>Share</b> button at the <b>bottom</b> of the screen (a box with an upward arrow)</span></li>'
+        +'<li><span class="num">3</span><span>Scroll down and choose <b>Add to Home Screen</b></span></li>'
+        +'<li><span class="num">4</span><span>Tap <b>Add</b> in the top-right corner – done!</span></li>';
+    } else if(isTouch){
+      platEl.textContent='Android (Chrome) – how to install:';
+      html='<li><span class="num">1</span><span>If an <b>Install</b> bar appears in the address bar, tap it</span></li>'
+        +'<li><span class="num">2</span><span>Or: open the browser <b>menu (⋮)</b> and choose <b>Install app</b> / <b>Add to Home Screen</b></span></li>'
+        +'<li><span class="num">3</span><span>Confirm – done, the app will be on your home screen!</span></li>';
+    } else {
+      platEl.textContent='Desktop browser (Chrome / Edge) – how to install:';
+      html='<li><span class="num">1</span><span>Click the <b>install icon</b> in the top-right corner of the address bar (a downward arrow in a square)</span></li>'
+        +'<li><span class="num">2</span><span>Or: menu (⋮) → <b>Install Ragdoll Masters</b></span></li>';
+    }
+    stepsEl.innerHTML=html;
+    ovl.classList.remove('hidden');
+  }
+  btn.addEventListener('click',async()=>{
+    if(deferred){ // natív telepítő (Chrome/Edge)
+      deferred.prompt();
+      const choice=await deferred.userChoice;
+      deferred=null;
+      if(choice&&choice.outcome==='accepted')btn.classList.add('hidden');
+      return;
+    }
+    showHelp(); // pl. iPhone/Safari: magyarázat, hogyan kell kézzel
+  });
+  document.getElementById('btnInstallClose').addEventListener('click',()=>ovl.classList.add('hidden'));
+})();
 /* ================= HARCOLO (FIGHTER) ================= */
 let fid=0;
 const ENEMY_COLORS=[['#d94f3d','#e8e6df'],['#3f76d9','#dde4ee'],['#3fa05a','#dbeadc'],['#c98a2e','#efe6d8'],['#8a53c9','#e6dcf0'],['#d14f9a','#f2e0ea']];
@@ -1347,6 +1418,19 @@ function frame(now){
   }catch(err){ if(window.console)console.error(err); }
 }
 requestAnimationFrame(frame);
+</script>
+<!-- PWA: service worker regisztráció (offline + telepíthető). Csak secure context-ban. -->
+<script>
+(function(){
+  if(!('serviceWorker' in navigator))return;
+  var secure = location.protocol==='https:' || location.hostname==='localhost' || location.hostname==='127.0.0.1';
+  if(!secure)return;
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('/sw.js').catch(function(err){
+      if(window.console)console.warn('SW register failed:',err);
+    });
+  });
+})();
 </script>
 </body>
 </html>

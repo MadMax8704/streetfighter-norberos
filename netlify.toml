@@ -7,3 +7,15 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+
+# PWA: a service worker és a manifest ne legyen cache-elve a CDN-en,
+# hogy az SW frissítés azonnal eljuthasson (új precache verzió).
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, max-age=0"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "no-cache, max-age=0"
